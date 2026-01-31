@@ -27,10 +27,11 @@ const App: React.FC = () => {
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     } catch (err: any) {
+      console.error("App: loadData error:", err);
       setState(prev => ({
         ...prev,
         loading: false,
-        error: err.message || "An unexpected error occurred."
+        error: err.message || "An unexpected market sync error occurred."
       }));
     }
   }, []);
@@ -45,28 +46,33 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#0f172a] pb-32 max-w-md mx-auto relative shadow-2xl">
-      <header className="sticky top-0 z-50 bg-[#0f172a]/95 backdrop-blur-md px-6 py-5 border-b border-white/5 shadow-lg">
-        <div className="flex justify-between items-center mb-5">
+    <div className="min-h-screen bg-[#020617] pb-32 max-w-md mx-auto relative shadow-2xl border-x border-white/5">
+      <header className="sticky top-0 z-50 bg-[#020617]/95 backdrop-blur-xl px-6 py-6 border-b border-white/5 shadow-xl">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tighter">BULLSEYE<span className="text-emerald-500">AI</span></h1>
-            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">7-Day Alpha Signals</p>
+            <h1 className="text-2xl font-black text-white tracking-tighter flex items-center gap-2">
+              <span className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-slate-900">
+                <i className="fa-solid fa-bolt-lightning"></i>
+              </span>
+              BULLSEYE<span className="text-emerald-500">AI</span>
+            </h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Live Alpha Intelligence</p>
           </div>
           <button 
             onClick={loadData}
             disabled={state.loading}
-            className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-emerald-400 disabled:opacity-30"
+            className="w-12 h-12 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center text-emerald-400 transition-all active:scale-95 disabled:opacity-30"
           >
-            <i className={`fa-solid fa-arrows-rotate ${state.loading ? 'animate-spin' : ''}`}></i>
+            <i className={`fa-solid fa-rotate-right text-lg ${state.loading ? 'animate-spin' : ''}`}></i>
           </button>
         </div>
 
-        <div className="relative">
-          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+        <div className="relative group">
+          <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm group-focus-within:text-emerald-500 transition-colors"></i>
           <input 
             type="text" 
-            placeholder="Search 50 growth stocks..." 
-            className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-emerald-500/50 text-white"
+            placeholder="Search 50 tickers..." 
+            className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:outline-none focus:border-emerald-500/50 text-white placeholder-slate-600 transition-all shadow-inner"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -75,22 +81,32 @@ const App: React.FC = () => {
 
       <main className="px-4 pt-6">
         {state.loading ? (
-          <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-12 h-12 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-            <p className="text-slate-400 text-sm font-medium">Scanning Market Trends...</p>
+          <div className="flex flex-col items-center justify-center py-40 text-center px-8">
+            <div className="relative mb-8">
+              <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <i className="fa-solid fa-magnifying-glass-chart text-emerald-500/50 animate-pulse"></i>
+              </div>
+            </div>
+            <h2 className="text-lg font-bold text-white mb-2">Verifying Live Prices</h2>
+            <p className="text-slate-400 text-xs leading-relaxed max-w-[240px]">
+              Searching Google Finance & Yahoo for current market data on 50 growth stocks...
+            </p>
           </div>
         ) : state.error ? (
-          <div className="py-20 text-center px-6">
-            <div className="text-rose-500 text-4xl mb-4">
-              <i className="fa-solid fa-circle-exclamation"></i>
+          <div className="py-24 text-center px-10">
+            <div className="w-20 h-20 bg-rose-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-500/20 shadow-lg shadow-rose-900/20">
+              <i className="fa-solid fa-triangle-exclamation text-3xl text-rose-500"></i>
             </div>
-            <h2 className="text-lg font-bold text-white mb-2">Connection Issue</h2>
-            <p className="text-slate-400 text-xs mb-8 leading-relaxed italic">"{state.error}"</p>
+            <h2 className="text-xl font-bold text-white mb-3">Sync Interrupted</h2>
+            <div className="bg-slate-900/50 border border-rose-500/20 rounded-2xl p-4 mb-8">
+              <p className="text-rose-300 text-xs italic leading-relaxed">"{state.error}"</p>
+            </div>
             <button 
               onClick={loadData}
-              className="px-8 py-3 bg-emerald-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all"
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black text-white shadow-xl shadow-emerald-900/40 active:scale-95 transition-all text-sm tracking-widest uppercase"
             >
-              Retry Sync
+              Retry Connection
             </button>
           </div>
         ) : (
@@ -98,13 +114,41 @@ const App: React.FC = () => {
             <div className="flex items-center justify-between px-2 mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                <span className="text-[10px] font-bold text-emerald-500 uppercase">Live Analysis Active</span>
+                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Live Grounding Active</span>
               </div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Updated: {state.lastUpdated}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Synced: {state.lastUpdated}</span>
             </div>
-            {filteredStocks.map((stock, idx) => (
-              <StockCard key={stock.symbol + idx} stock={stock} index={idx} />
-            ))}
+            
+            {filteredStocks.length > 0 ? (
+              filteredStocks.map((stock, idx) => (
+                <StockCard key={stock.symbol + idx} stock={stock} index={idx} />
+              ))
+            ) : (
+              <div className="py-20 text-center">
+                <i className="fa-solid fa-filter text-slate-700 text-4xl mb-4"></i>
+                <p className="text-slate-500 text-sm">No tickers match "{searchQuery}"</p>
+              </div>
+            )}
+
+            {state.sources.length > 0 && (
+              <div className="mt-8 pt-8 border-t border-white/5 pb-12">
+                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 px-2">Verification Sources</h4>
+                <div className="flex flex-wrap gap-2 px-2">
+                  {state.sources.slice(0, 3).map((source, i) => (
+                    <a 
+                      key={i} 
+                      href={source.uri} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[10px] bg-slate-800/50 text-slate-400 px-3 py-1.5 rounded-lg border border-white/5 hover:border-emerald-500/30 hover:text-emerald-400 transition-all"
+                    >
+                      <i className="fa-solid fa-link text-[8px] mr-1.5"></i>
+                      {source.title.length > 20 ? source.title.substring(0, 20) + '...' : source.title}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
