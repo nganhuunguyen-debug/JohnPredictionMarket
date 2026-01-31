@@ -2,9 +2,16 @@
 import { GoogleGenAI } from "@google/genai";
 import { Stock } from "./types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-
 export const fetchStockAnalysis = async (): Promise<{ stocks: Stock[], sources: { title: string, uri: string }[] }> => {
+  // Ensure the API key is retrieved exactly when the button is pressed
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("API_KEY is not defined. Please check your environment configuration.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  
   const today = new Date().toLocaleDateString('en-US', { 
     year: 'numeric', 
     month: 'long', 
@@ -15,33 +22,32 @@ export const fetchStockAnalysis = async (): Promise<{ stocks: Stock[], sources: 
   
   const prompt = `
     Today's precise time is ${today}. 
-    Use Google Search to find current, live market prices for 50 high-potential stocks (S&P 500, Tech, and Trending) for the next 7 days.
+    Use Google Search to find current, live market prices for 50 high-potential stocks (S&P 500 and Trending Growth) for the next 7 days.
     
     For each stock, provide:
-    1. Symbol
-    2. Company Name
-    3. CURRENT market price (The actual live price or most recent closing price found via search)
-    4. The EXACT DATE/TIME of that current price (e.g., "Oct 24, 3:45 PM EST")
-    5. TARGET Price for exactly 7 days from today
-    6. TARGET Date (which should be 7 days from today)
-    7. Reason for the predicted gain
-    8. Sector
+    1. symbol
+    2. name
+    3. currentPrice (Live price from search)
+    4. currentPriceDate (Timestamp of the search result)
+    5. targetPrice (7-day projection)
+    6. targetPriceDate (7 days from today)
+    7. reason (Concise catalyst)
+    8. sector
 
-    IMPORTANT: Format your response as a valid JSON array of objects inside a code block.
+    Return ONLY a valid JSON array of objects. No markdown, no commentary.
     JSON structure:
     [
       {
-        "symbol": "TSLA",
-        "name": "Tesla Inc",
-        "currentPrice": 213.54,
-        "currentPriceDate": "Current Market Time",
-        "targetPrice": 235.00,
+        "symbol": "AAPL",
+        "name": "Apple Inc",
+        "currentPrice": 230.12,
+        "currentPriceDate": "Current Time",
+        "targetPrice": 245.00,
         "targetPriceDate": "Target Date",
-        "reason": "Strong delivery numbers and positive momentum.",
-        "sector": "Automotive"
+        "reason": "Strong demand for new AI features.",
+        "sector": "Technology"
       }
     ]
-    Return exactly 50 stocks. Ensure the currentPrice is as accurate as possible to the second I am asking.
   `;
 
   try {
@@ -50,30 +56,28 @@ export const fetchStockAnalysis = async (): Promise<{ stocks: Stock[], sources: 
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
-        temperature: 0.1, // Near-zero for maximum factual consistency
+        temperature: 0.1,
+        responseMimeType: "application/json"
       },
     });
 
-    const text = response.text || "";
-    const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if (!jsonMatch) {
-      throw new Error("Failed to parse stock data from AI response.");
-    }
+    const text = response.text;
+    if (!text) throw new Error("Empty response from Gemini.");
 
-    const stocks: Stock[] = JSON.parse(jsonMatch[0]).map((s: any) => ({
+    const stocks: Stock[] = JSON.parse(text).map((s: any) => ({
       ...s,
       gainPercentage: s.currentPrice > 0 ? ((s.targetPrice - s.currentPrice) / s.currentPrice) * 100 : 0
     }));
 
     const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks
       ?.map((chunk: any) => ({
-        title: chunk.web?.title || "Market Source",
+        title: chunk.web?.title || "Market Data",
         uri: chunk.web?.uri || "#"
       })) || [];
 
     return { stocks, sources };
-  } catch (error) {
-    console.error("Error fetching stock analysis:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Gemini Fetch Error:", error);
+    throw new Error(error.message || "Failed to retrieve live stock data.");
   }
 };
