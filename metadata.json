@@ -1,0 +1,5 @@
+{
+  "name": "Bullseye AI: 7-Day Stock Predictor",
+  "description": "A professional-grade mobile-first stock analyzer that uses Gemini AI and Google Search to identify 50 high-potential stocks for the next 7 days, complete with real-time price insights and target targets.",
+  "requestFramePermissions": []
+}
